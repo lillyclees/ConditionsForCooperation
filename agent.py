@@ -1,3 +1,4 @@
+import math
 from math import comb
 import numpy as np
 import csv
@@ -7,8 +8,9 @@ from scipy.stats import beta
 
 
 class Agent():
-    def __init__(self, pop_size, x, y):
-        self.dec_rule = "S" # S = accept with probability other players accept, B = best response
+    def __init__(self, pop_size, x, y, dec_rule="S", risk_av=False):
+        self.dec_rule = dec_rule # S = accept with probability other players accept, B = best response
+        self.risk_av = risk_av # toggle for expected utility with risk aversion
 
         self.pop_size = pop_size
         # x and y are payoffs
@@ -40,7 +42,7 @@ class Agent():
 
         # playing best response
         if self.dec_rule == "B":
-            ac, rej = exp_util
+            ac, rej = self.get_exp_util(self.prob_reject)
             if ac > rej:
                 choice = "accept"
             else:
@@ -92,17 +94,16 @@ class Agent():
         plt.grid(True)
         plt.show()
 
-    def risk_av_exp_util(self, p_rej):
-        self.exp_util_reject = np.power(p_rej, (pop_size - 1)) * self.y
-        return math.log(x), exp_util_reject
+    def get_exp_util(self, p_rej):
+        accept = self.x
+        if self.risk_av:
+            accept = math.log(self.x)
+        reject = np.power(p_rej, (self.pop_size - 1)) * self.y
+        return accept, reject
 
 
-    def exp_util(self, p_rej):
-        exp_util_reject = np.power(p_rej, (pop_size - 1)) * self.y
-        return x, exp_util_reject
 
-
-    def Random_starting_probs(self, mean=0.5, std_dev=0.1):
+    def random_starting_probs(self, mean=0.5, std_dev=0.1):
 
         # Agents starting probability of accept is a random sample from a pdf
         # centered at 0.5
