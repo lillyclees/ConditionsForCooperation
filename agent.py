@@ -1,7 +1,8 @@
 import math
 from math import comb
 import numpy as np
-import csv
+import pandas as pd
+import scipy.stats
 import matplotlib.pyplot as plt
 from scipy.stats import norm
 from scipy.stats import beta
@@ -25,6 +26,8 @@ class Agent():
         self.ac_prior = 1
         self.rej_prior = 1
 
+        self.bayes_df = pd.DataFrame({'proportion': np.arange(0.0, 1.01, 0.01)})
+
         self.prob_accept = 0.5
         self.prob_reject = 0.5
 
@@ -33,15 +36,17 @@ class Agent():
 
         self.last_choice = 0
         self.total_util = 0
+        self.time = 0 # number of moves made
 
     def move(self):
+        self.time += 1
 
-        # playing mixed strategy
-        if self.dec_rule == "S":
+        # playing mixed strategy for atleast the first 5 moves
+        if self.dec_rule == "S" or self.time < 5:
             choice = np.random.choice(["accept","reject"], size=1, p=[self.prob_accept, self.prob_reject])
 
         # playing best response
-        if self.dec_rule == "B":
+        elif self.dec_rule == "B":
             ac, rej = self.get_exp_util(self.prob_reject)
             if ac > rej:
                 choice = "accept"
@@ -72,27 +77,49 @@ class Agent():
         #norm_constant = comb(n, k) * np.power(1 - prior, k) * np.power((prior), k) # P(D)
         #posterior = (prior * likelihood) / (norm_constant + likelihood) # P(H|D)
 
+        ### based on code from: https://statsthinking21.github.io/statsthinking21-python/10-BayesianStatistics.html ###
+        if self.time < 2:
+            self.bayes_df['likelihood'] = scipy.stats.binom.pmf(acceptances,
+                                                                self.pop_size,
+                                                                self.bayes_df['proportion'])
+            self.bayes_df['prior'] = 1 / self.bayes_df.shape[0]
 
-        self.ac_prior += acceptances
-        self.rej_prior += self.pop_size - acceptances
+        else:
+            self.bayes_df = self.bayes_df[['proportion', 'posterior']].rename(columns={'posterior': 'prior'})
+            # The prior is equal for all possible values
+            self.bayes_df['likelihood'] = scipy.stats.binom.pmf(acceptances,
+                                                            self.pop_size,
+                                                            self.bayes_df['proportion'])
 
-        # updating probability distribution for accept given the previous number of acceptances / rejections
-        self.posterior = beta.pdf(self.theta, self.ac_prior, self.rej_prior)
 
-        # mean likelihood player accepts offer
-        mean = self.posterior.mean()
+        # compute the marginal likelihood by adding up the likelihood of each possible proportion times its prior probability.
 
-        # assuming the players belief of the probability others accept is same as probability they will accept
-        self.prob_accept = mean
-        self.prob_reject = 1 - mean
+        marginal_likelihood = (self.bayes_df['likelihood'] * self.bayes_df['prior']).sum()
+
+        self.bayes_df['posterior'] = (self.bayes_df['likelihood'] * self.bayes_df['prior']) / marginal_likelihood
+        ######## copy ends
+
+
+        self.prob_accept = (self.bayes_df['likelihood'].idxmax()) / self.pop_size
+        self.prob_reject = 1 - self.prob_accept
+
+
+
 
     def plot_dist(self):
-        plt.plot(self.theta, self.posterior, label='Bayesian Update of Acceptances / Rejections')
-        plt.xlabel('Projected Likelihood of Accepting')
-        plt.ylabel('Density')
+        ### copied from: https://statsthinking21.github.io/statsthinking21-python/10-BayesianStatistics.html ###
+        # plot the likelihood, prior, and posterior
+
+        plt.plot(self.bayes_df['proportion'], self.bayes_df['likelihood'], label='likelihood')
+        plt.plot(self.bayes_df['proportion'], self.bayes_df['prior'], label='prior')
+        plt.plot(self.bayes_df['proportion'], self.bayes_df['posterior'],
+                 'k--', label='posterior')
+
         plt.legend()
         plt.grid(True)
         plt.show()
+
+        ##### copy ends
 
     def get_exp_util(self, p_rej):
         accept = self.x
