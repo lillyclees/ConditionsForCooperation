@@ -1,4 +1,6 @@
 import math
+import random
+import os
 from math import comb
 import numpy as np
 import pandas as pd
@@ -19,13 +21,6 @@ class Agent():
         self.x = x # if player accepts offer
         self.y = y # if all players reject offer
 
-        self.n_strats = comb(self.pop_size, 2)
-
-        self.theta = np.linspace(0, 1, self.pop_size)
-        self.posterior = beta.pdf(self.theta, 1, 1)
-        self.ac_prior = 1
-        self.rej_prior = 1
-
         self.bayes_df = pd.DataFrame({'proportion': np.arange(0.0, 1.01, 0.01)})
 
         self.prob_accept = 0.5
@@ -41,7 +36,7 @@ class Agent():
     def move(self):
         self.time += 1
 
-        # playing mixed strategy for atleast the first 5 moves
+        # playing mixed strategy for at least the first 5 moves
         if self.dec_rule == "S" or self.time < 5:
             choice = np.random.choice(["accept","reject"], size=1, p=[self.prob_accept, self.prob_reject])
 
@@ -99,8 +94,7 @@ class Agent():
         self.bayes_df['posterior'] = (self.bayes_df['likelihood'] * self.bayes_df['prior']) / marginal_likelihood
         ######## copy ends
 
-
-        self.prob_accept = (self.bayes_df['likelihood'].idxmax()) / self.pop_size
+        self.prob_accept = (self.bayes_df['posterior'].idxmax()) / 100
         self.prob_reject = 1 - self.prob_accept
 
 
@@ -118,7 +112,10 @@ class Agent():
 
         plt.legend()
         plt.grid(True)
-        plt.savefig(f"{dir + str(episode)}/agent1 step {self.time}.jpg")
+        new_dir = f"{dir}/episode {str(episode)} figs"
+        os.mkdir(new_dir)
+        plt.savefig(f"{new_dir}/agent1 step {self.time}.jpg")
+        plt.close()
         #plt.show()
 
         ##### copy ends
@@ -130,15 +127,17 @@ class Agent():
         reject = np.power(p_rej, (self.pop_size - 1)) * self.y
         return accept, reject
 
+    def random_starting_probs(self):
+        self.prob_accept = random.uniform(0, 1.0)
+        self.prob_reject = 1 - self.prob_accept
 
+        self.prob_others_reject = self.prob_reject
+        self.prob_others_accept = self.prob_accept
 
-    def random_starting_probs(self, mean=0.5, std_dev=0.1):
+    def pdf_starting_probs(self, mean=0.5, std_dev=0.1):
 
-        # Agents starting probability of accept is a random sample from a pdf
-        # centered at 0.5
-
-        lin_space = np.linspace(0,1,100)
-        norm.pdf(lin_space, loc=mean, scale=std_dev)
+        # Agents starting probability of accept is a random sample from a normal distribution
+        # centered at 0.5 with standard deviation 0.1
         p_accept = norm.rvs(loc=mean, scale=std_dev, size=1)
 
         self.prob_accept = p_accept[0]
