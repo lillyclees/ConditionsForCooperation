@@ -106,7 +106,7 @@ class Agent():
 
 
 
-    def plot_dist(self):
+    def plot_dist(self, dir, episode):
         ### copied from: https://statsthinking21.github.io/statsthinking21-python/10-BayesianStatistics.html ###
         # plot the likelihood, prior, and posterior
 
@@ -115,9 +115,11 @@ class Agent():
         plt.plot(self.bayes_df['proportion'], self.bayes_df['posterior'],
                  'k--', label='posterior')
 
+
         plt.legend()
         plt.grid(True)
-        plt.show()
+        plt.savefig(f"{dir + str(episode)}/agent1 step {self.time}.jpg")
+        #plt.show()
 
         ##### copy ends
 

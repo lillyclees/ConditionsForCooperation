@@ -1,4 +1,8 @@
 from agent import *
+import os
+import datetime
+import csv
+
 
 def create_agents(pop_size):
     players = []
@@ -9,39 +13,38 @@ def create_agents(pop_size):
 
     return players
 
-def plot_outcome(data):
+def plot_episodes_outcome(data, dir, episodes):
     plt.plot(data)
-    plt.xlabel('Episode')
+    plt.xlabel('Steps')
     plt.ylabel('Avg Probability of Accepting')
-    plt.show()
+    plt.savefig(f"{dir}/{episodes} episodes")
+    #plt.show()
 
+def plot_episode_outcome(data, dir, episode):
+    plt.plot(data)
+    plt.xlabel('Steps')
+    plt.ylabel('Avg Probability of Accepting')
+    plt.savefig(f"{dir}/episode {episode}")
+    #plt.show()
 
-fields = ['Epoch', 'Acceptances', 'Beliefs', 'Total Payoffs']
-game_type = "simple"
-game_no = "1"
-start_probs = "random"
-
-pop_size = 100
-x = 5
-y = 10
-n_episodes = 1
-episode_length = 1000
-
-
-def run_episodes(n_episodes, episode_length, x, y, pop_size, game_no, game_type, start_probs):
+def run_episodes(n_episodes, episode_length, x, y, pop_size, game_no, game_type, start_probs, dir):
+    data = []
     for episode in range(n_episodes):
-        avg_probs = run_episode(episode_length, x, y, pop_size, game_no + str(episode), game_type, start_probs)
-        plot_outcome(avg_probs)
+        avg_probs = run_episode(episode_length, x, y, pop_size, game_no + str(episode), game_type, start_probs, episode, dir)
+        plot_episode_outcome(avg_probs, dir, episode)
+        data.append(avg_probs)
+    plot_episodes_outcome(data, dir, n_episodes)
 
-def run_episode(episode_length, x, y, pop_size, game_no, game_type, start_probs):
+
+def run_episode(episode_length, x, y, pop_size, game_no, game_type, start_probs, episode, dir):
     file_name = game_type + game_no + start_probs + "x=" + str(x) + "y=" + str(y)
     players = create_agents(pop_size)
 
     avg_probs = []
     data = []
 
-    for epoch in range(episode_length):
-        print(epoch)
+    for step in range(episode_length):
+        print(step)
         accept = False
         acceptances = 0
         prob_accepts = []
@@ -63,7 +66,7 @@ def run_episode(episode_length, x, y, pop_size, game_no, game_type, start_probs)
             total_payoffs.append(player.total_util)
 
         episode_data = {}
-        episode_data["Epoch"] = epoch
+        episode_data["Step"] = step
         episode_data["Acceptances"] = acceptances
         episode_data["Prob Accepts"] = prob_accepts
         episode_data["Total Payoffs"] = total_payoffs
@@ -72,18 +75,34 @@ def run_episode(episode_length, x, y, pop_size, game_no, game_type, start_probs)
 
         avg_probs.append(sum(prob_accepts) / pop_size)
 
+        if step % 100 == 0:
+            players[0].plot_dist(dir, episode)
 
-        #players[0].plot_dist()
 
-
-    with open(f'{file_name}.csv', 'w', newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=["Epoch", "Acceptances", "Prob Accepts", "Total Payoffs"])
+    with open(f'{dir_name}/{file_name}.csv', 'w', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=["Step", "Acceptances", "Prob Accepts", "Total Payoffs"])
         writer.writeheader()
         writer.writerows(data)
 
     return avg_probs
 
-run_episodes(n_episodes, episode_length, x, y, pop_size, game_no, game_type, start_probs)
+# log saving set-up
+run = datetime.datetime.now()
+dir_name = f"run {run}"
+os.mkdir(dir_name)
+fields = ['Step', 'Acceptances', 'Beliefs', 'Total Payoffs']
+game_type = "simple"
+game_no = "1"
+start_probs = "random"
+
+# game parameters
+pop_size = 100
+x = 5
+y = 10
+n_episodes = 1
+episode_length = 1000
+
+#run_episodes(n_episodes, episode_length, x, y, pop_size, game_no, game_type, start_probs)
 
 
 
