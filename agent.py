@@ -90,11 +90,12 @@ class Agent():
         # compute the marginal likelihood by adding up the likelihood of each possible proportion times its prior probability.
 
         marginal_likelihood = (self.bayes_df['likelihood'] * self.bayes_df['prior']).sum()
-
         self.bayes_df['posterior'] = (self.bayes_df['likelihood'] * self.bayes_df['prior']) / marginal_likelihood
+
         ######## copy ends
 
-        self.prob_accept = (self.bayes_df['posterior'].idxmax()) / 100
+        best_idx =  self.prob_accept = (self.bayes_df['posterior'].idxmax())
+        self.prob_accept = self.bayes_df.loc[best_idx, 'proportion']
         self.prob_reject = 1 - self.prob_accept
 
 
@@ -108,7 +109,7 @@ class Agent():
         plt.plot(self.bayes_df['proportion'], self.bayes_df['prior'], label='prior')
         plt.plot(self.bayes_df['proportion'], self.bayes_df['posterior'],
                  'k--', label='posterior')
-
+        ##### copy ends
 
         plt.legend()
         plt.grid(True)
@@ -118,7 +119,7 @@ class Agent():
         plt.close()
         #plt.show()
 
-        ##### copy ends
+
 
     def get_exp_util(self, p_rej):
         accept = self.x
