@@ -1,8 +1,26 @@
-from agent import *
+from new_agent import *
 import os
 import datetime
 import csv
 
+def save_game_info(n_episodes, episode_length, x, y, pop_size, start_probs, dir, risk, dec_rule):
+    with open(f'{dir}/run info.txt', 'w') as file:
+        info = [f"Number of episodes: {n_episodes}",
+                f"Rounds per episode: {episode_length}",
+                f"Number of players: {pop_size}",
+                f"x: {x}",
+                f"y: {y}",
+                f"Risk aversion: {risk}"]
+        file.writelines(line + "\n" for line in info)
+        if dec_rule == "S":
+            file.write('Playing mixed strategy\n')
+        if dec_rule == "B":
+            file.write('Playing best response\n')
+        if start_probs == "random":
+            file.write('Players initialised with random mixed strategies\n')
+        if start_probs == "pdf":
+            file.write('Players initialised with p accept corresponding to a sample from a PDF with mean=0.5 std=0.1\n')
+    file.close()
 
 def create_agents(pop_size, start_probs, rule, risk, x, y):
     players = []
@@ -18,7 +36,10 @@ def create_agents(pop_size, start_probs, rule, risk, x, y):
     return players
 
 def plot_episodes_outcomes(data, dir, episodes):
-    plt.plot(data)
+    #print(data)
+    #print(len(data))
+    for episode in data:
+        plt.plot(episode)
     plt.xlabel('Steps')
     plt.ylabel('Avg Probability of Accepting')
     plt.savefig(f"{dir}/{episodes} episodes")
@@ -41,32 +62,12 @@ def plot_episode_outcome(ep_data, dir, episode):
     plt.close()
     #plt.show()
 
-def run_episodes(n_episodes, episode_length, x, y, pop_size, game_type, start_probs, dir, risk, dec_rule):
-
-    # writing run information to run info.txt
-    with open(f'{dir}/run info.txt', 'w') as file:
-        info = [f"Number of episodes: {n_episodes}",
-                f"Rounds per episode: {episode_length}",
-                f"Number of players: {pop_size}",
-                f"x: {x}",
-                f"y: {y}",
-                f"Risk aversion: {risk}"]
-        file.writelines(line + "\n" for line in info)
-        if dec_rule == "S":
-            file.write('Playing mixed strategy\n')
-        if dec_rule == "B":
-            file.write('Playing best response\n')
-        if start_probs == "random":
-            file.write('Players initialised with random mixed strategies\n')
-        if start_probs == "pdf":
-            file.write('Players initialised with p accept corresponding to a sample from a PDF with mean=0.5 std=0.1\n')
-
-
+def run_episodes(n_episodes, episode_length, x, y, pop_size, start_probs, dir, risk, dec_rule):
         data = []
         # running each episode and plotting episode outcome
         for episode in range(n_episodes):
-            avg_probs, acceptance_trend = run_episode(episode_length, x, y, pop_size, str(episode), game_type,
-                                                      start_probs, episode, dir, risk, dec_rule)
+            avg_probs, acceptance_trend = run_episode(episode_length, x, y, pop_size, str(episode),
+                                                      start_probs, dir, risk, dec_rule)
             rejections = [pop_size - i for i in acceptance_trend]
             plot_episode_outcome([avg_probs, acceptance_trend, rejections], dir, episode)
             data.append(avg_probs)
@@ -74,7 +75,7 @@ def run_episodes(n_episodes, episode_length, x, y, pop_size, game_type, start_pr
         plot_episodes_outcomes(data, dir, n_episodes)
 
 
-def run_episode(episode_length, x, y, pop_size, game_no, game_type, start_probs, episode, dir, risk, dec_rule):
+def run_episode(episode_length, x, y, pop_size, game_no, start_probs, dir, risk, dec_rule):
     file_name = game_type + game_no + start_probs + "x=" + str(x) + "y=" + str(y)
     players = create_agents(pop_size, start_probs, dec_rule, risk, x, y)
 
@@ -94,30 +95,22 @@ def run_episode(episode_length, x, y, pop_size, game_no, game_type, start_probs,
             if player.move() == "accept":
                 accept = True
                 acceptances += 1
-            if player.prob_accept > 1:
-                print("wrong")
             prob_accepts.append(player.prob_accept)
 
         # disperse payoffs and update beliefs
         for player in players:
             player.payoff(accept)
             player.update_belief(acceptances)
-            total_payoffs.append(player.total_util)
 
         episode_data = {}
         episode_data["Step"] = step
         episode_data["Acceptances"] = acceptances
         episode_data["Prob Accepts"] = prob_accepts
-        episode_data["Total Payoffs"] = total_payoffs
         data.append(episode_data)
 
 
-        avg_probs.append(sum(prob_accepts) / pop_size)
+        avg_probs.append(acceptances / pop_size)
         acceptance_trend.append(acceptances)
-
-        # plot player 1's Bayesian distribution every 100 steps
-        #if step % 100 == 0:
-        #    players[0].plot_dist(dir, episode)
 
     # save episode info to csv
     with open(f'{dir}/{file_name}.csv', 'w', newline='') as f:
@@ -144,12 +137,14 @@ pop_size = 100
 x = 5
 y = 15
 n_episodes = 1
-episode_length = 100
-dec_rule = "B" # S = accept with probability other players accept, B = best response
-start_probs = "pdf" # random / pdf
+episode_length = 10000
+dec_rule = "S" # S = accept with probability other players accept, B = best response
+start_probs = "random" # random / pdf
 risk_av = False
 
-run_episodes(n_episodes, episode_length, x, y, pop_size, game_type, start_probs, dir_name, risk_av, dec_rule)
+
+run_episodes(n_episodes, episode_length, x, y, pop_size, start_probs, dir_name, risk_av, dec_rule)
+save_game_info(n_episodes, episode_length, x, y, pop_size, start_probs, dir_name, risk_av, dec_rule)
 
 
 
