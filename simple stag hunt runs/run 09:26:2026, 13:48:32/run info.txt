@@ -1,0 +1,7 @@
+Number of episodes: 1
+Rounds per episode: 100
+Number of players: 100
+x: 5
+y: 10
+Risk aversion: False
+Playing best response

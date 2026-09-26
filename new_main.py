@@ -30,7 +30,7 @@ def plot_episode_outcome(ep_data, dir, episode):
     plt.close()
     #plt.show()
 
-def get_exp_util(x,y, p_rej, pop_size, risk_av=False):
+def get_exp_util(x, y, p_rej, pop_size, risk_av=False):
         accept = x
         if risk_av:
             accept = math.log(x)
@@ -38,7 +38,7 @@ def get_exp_util(x,y, p_rej, pop_size, risk_av=False):
         return accept, reject
 
 
-def save_game_info(n_episodes, episode_length, x, y, pop_size, start_probs, dir, risk, dec_rule):
+def save_game_info(n_episodes, episode_length, x, y, pop_size, dir, risk, dec_rule):
     with open(f'{dir}/run info.txt', 'w') as file:
         info = [f"Number of episodes: {n_episodes}",
                 f"Rounds per episode: {episode_length}",
@@ -51,25 +51,23 @@ def save_game_info(n_episodes, episode_length, x, y, pop_size, start_probs, dir,
             file.write('Playing mixed strategy\n')
         if dec_rule == "B":
             file.write('Playing best response\n')
-        if start_probs == "random":
-            file.write('Players initialised with random mixed strategies\n')
-        if start_probs == "pdf":
-            file.write('Players initialised with p accept corresponding to a sample from a PDF with mean=0.5 std=0.1\n')
+        
 
-def run_episodes(n_episodes, episode_length, x, y, pop_size, dir):
+def run_episodes(n_episodes, episode_length, x, y, pop_size, dir, dec_rule, risk_av=False):
         data = []
         # running each episode and plotting episode outcome
         for episode in range(n_episodes):
-            episode_data = run_simulation(pop_size, episode_length, x, y)
+            episode_data = run_simulation(pop_size, episode_length, x, y, dec_rule=dec_rule, risk_av=False)
             plot_episode_outcome(episode_data, dir, episode)
             data.append(episode_data[0])
 
         # plot average probability of acceptance over time for each episode
         plot_episodes_outcomes(data, dir, n_episodes)
+        save_game_info(n_episodes, episode_length, x, y, pop_size, dir, risk_av, dec_rule)
 
 
 
-def run_simulation(pop_size=100, steps=1000, x=5, y=10, dec_rule="S", risk_av=False):
+def run_simulation(pop_size=100, steps=1000, x=5, y=10, dec_rule="S", risk_av=True):
     alpha = np.ones(pop_size)
     beta = np.ones(pop_size)
 
@@ -77,12 +75,16 @@ def run_simulation(pop_size=100, steps=1000, x=5, y=10, dec_rule="S", risk_av=Fa
     history = [[],[],[]]
 
     for step in range(steps):
+
         actions = np.random.rand(pop_size) < p_accept # True = Accept, False = Reject
         if dec_rule == "S" or step < 5:
             acceptances = np.sum(actions)
-        if dec_rule == "B":
-            eu_accept, eu_reject = get_exp_util(x, y, 1-p_accept, pop_size)
-            if eu_accept > eu_reject:
+        elif dec_rule == "B":
+            eu_accept, eu_reject = get_exp_util(x, y, 1-p_accept[0], pop_size, risk_av=risk_av)
+            print(eu_accept, eu_reject)
+            if eu_reject > eu_accept:
+                acceptances = 0
+            else:
                 acceptances = pop_size
 
         alpha += acceptances
@@ -108,13 +110,13 @@ game_type = "simple"
 
 
 # game parameters
-pop_size = 100
+pop_size = 1000
 x = 5
-y = 15
-n_episodes = 10
-episode_length = 1000
+y = 10
+n_episodes = 1
+episode_length = 100
 dec_rule = "B" # S = accept with probability other players accept, B = best response
 start_probs = "pdf" # random / pdf
 risk_av = False
 
-run_episodes(n_episodes, episode_length, x, y, pop_size, dir_name)
+run_episodes(n_episodes, episode_length, x, y, pop_size, dir_name, dec_rule=dec_rule, risk_av=risk_av)
