@@ -1,0 +1,9 @@
+Number of episodes: 100
+Rounds per episode: 100
+Number of players: 10
+x: 5
+y: 10
+Risk aversion: False
+1 episodes converged to reject
+99 episodes converged to accept
+Playing best response
