@@ -16,6 +16,7 @@ class Agent():
         # 0 < x < y
         self.x = x # if player accepts offer
         self.y = y # if all players reject offer
+        self.threashold = pop_size
 
         self.alpha = 1
         self.beta = 1
@@ -50,10 +51,10 @@ class Agent():
 
         return choice
 
-    def payoff(self, accept):
+    def payoff(self, acceptances):
         # payoff is y if every player rejects offer
         # otherwise it is x (if player accepts) or 0 (if player rejects)
-        if self.last_choice == "reject" and accept == False:
+        if self.last_choice == "reject" and acceptances >= self.threashold:
             payoff = self.y
         elif self.last_choice == "accept":
             payoff = self.x
@@ -68,27 +69,6 @@ class Agent():
         self.beta += (self.pop_size - acceptances)
         self.prob_accept = self.alpha / (self.alpha + self.beta)
         self.prob_reject = 1 - self.prob_accept
-
-
-    def plot_dist(self, dir, episode):
-        ### copied from: https://statsthinking21.github.io/statsthinking21-python/10-BayesianStatistics.html ###
-        # plot the likelihood, prior, and posterior
-
-        plt.plot(self.bayes_df['proportion'], self.bayes_df['likelihood'], label='likelihood')
-        plt.plot(self.bayes_df['proportion'], self.bayes_df['prior'], label='prior')
-        plt.plot(self.bayes_df['proportion'], self.bayes_df['posterior'],
-                 'k--', label='posterior')
-        ##### copy ends
-
-        plt.legend()
-        plt.grid(True)
-        new_dir = f"{dir}/episode {str(episode)} figs"
-        os.mkdir(new_dir)
-        plt.savefig(f"{new_dir}/agent1 step {self.time}.jpg")
-        plt.close()
-        #plt.show()
-
-
 
     def get_exp_util(self, p_rej):
         accept = self.x
