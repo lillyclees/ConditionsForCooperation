@@ -1,0 +1,10 @@
+Number of episodes: 100
+Rounds per episode: 100
+Number of players: 3
+x: 5
+y: 5
+Risk aversion: False
+0 episodes converged to reject
+100 episodes converged to accept
+Playing best response
+Star network
