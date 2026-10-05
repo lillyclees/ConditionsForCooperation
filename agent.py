@@ -7,16 +7,19 @@ from scipy.stats import norm
 
 
 class Agent():
-    def __init__(self, pop_size, x, y, dec_rule="S", risk_av=False):
-        self.dec_rule = dec_rule # S = accept with probability other players accept, B = best response
-        self.risk_av = risk_av # toggle for expected utility with risk aversion
+    def __init__(self, K, pop_size, x, y, dec_rule="S", risk_av=False, ifc=True):
+        self.dec_rule = dec_rule # s: S = accept with probability other players accept, B = best response
+        self.risk_av = risk_av # p: toggle for expected utility with risk aversion
+        self.decision_noise = 0 # b: decision noise
+        self.influenced_fairness_crit = ifc
 
         self.pop_size = pop_size
         # x and y are payoffs
         # 0 < x < y
         self.x = x # if player accepts offer
         self.y = y # if all players reject offer
-        self.threashold = pop_size
+        self.threashold = K 
+        self.reservation_threashold = x # r: minimum amount of compensation / maximum cost 
 
         self.alpha = 1
         self.beta = 1
@@ -31,17 +34,30 @@ class Agent():
         self.total_util = 0
         self.time = 0 # number of moves made
 
+    def update_belief(self, acceptances, rejections):
+        #belief of agent i that agent j will reject offer
+              #n = self.pop_size
+        #k = acceptances
 
-    def move(self):
+        self.alpha += acceptances
+        self.beta += rejections
+        self.prob_accept = self.alpha / (self.alpha + self.beta)
+        self.prob_reject = 1 - self.prob_accept
+
+    def update_strategy(self):
+        pass
+
+    def move(self, x, y): 
         self.time += 1
 
+        # strategy at time t
         # playing mixed strategy for at least the first 5 moves
         if self.dec_rule == "S" or self.time < 5:
             choice = np.random.choice(["accept","reject"], size=1, p=[self.prob_accept, self.prob_reject])
 
         # playing best response
         elif self.dec_rule == "B":
-            ac, rej = self.get_exp_util(self.prob_reject)
+            ac, rej = self.get_exp_util(self.prob_reject, x, y)
             if ac > rej:
                 choice = "accept"
             else:
@@ -51,30 +67,28 @@ class Agent():
 
         return choice
 
-    def payoff(self, acceptances):
+    def payoff(self, r_offer, a_offer):
         # payoff is y if every player rejects offer
         # otherwise it is x (if player accepts) or 0 (if player rejects)
-        if self.last_choice == "reject" and acceptances >= self.threashold:
-            payoff = self.y
-        elif self.last_choice == "accept":
-            payoff = self.x
+        if self.last_choice == "reject":
+            payoff = r_offer
         else:
-            payoff = 0
+            payoff = a_offer
         self.total_util += payoff
 
-    def update_belief(self, acceptances):
+    #def update_belief(self, acceptances):
         #n = self.pop_size
         #k = acceptances
-        self.alpha += acceptances
-        self.beta += (self.pop_size - acceptances)
-        self.prob_accept = self.alpha / (self.alpha + self.beta)
-        self.prob_reject = 1 - self.prob_accept
+        #self.alpha += acceptances
+        #self.beta += (self.pop_size - acceptances)
+        #self.prob_accept = self.alpha / (self.alpha + self.beta)
+        #self.prob_reject = 1 - self.prob_accept
 
-    def get_exp_util(self, p_rej):
-        accept = self.x
+    def get_exp_util(self, p_rej, x, y):
+        accept = x
         if self.risk_av:
-            accept = math.log(self.x)
-        reject = np.power(p_rej, (self.pop_size - 1)) * self.y
+            accept = math.log(x)
+        reject = np.power(p_rej, (self.pop_size - 1)) * y
         return accept, reject
 
     def random_starting_probs(self):
@@ -95,4 +109,7 @@ class Agent():
 
         self.prob_others_reject = self.prob_reject
         self.prob_others_accept = self.prob_accept
-
+    
+    def calculate_res_threash(self, fairness_benchmark, std_dev=0.1):
+        # res threash drawn from normal dist centered on pf
+        self.reservation_threashold = norm.rvs(loc=fairness_benchmark, scale=std_dev, size=1)

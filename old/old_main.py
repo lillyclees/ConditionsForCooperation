@@ -1,4 +1,4 @@
-from new_agent import *
+from agent import *
 import os
 import datetime
 import csv
