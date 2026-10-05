@@ -7,19 +7,15 @@ from scipy.stats import norm
 
 
 class Agent():
-    def __init__(self, K, pop_size, x, y, dec_rule="S", risk_av=False, ifc=True):
+    def __init__(self, K, pop_size, x, y, res_threash, dec_rule="S", risk_av=0, inc_fair=True):
         self.dec_rule = dec_rule # s: S = accept with probability other players accept, B = best response
-        self.risk_av = risk_av # p: toggle for expected utility with risk aversion
+        self.risk_av = risk_av # p: risk aversion coefficient
         self.decision_noise = 0 # b: decision noise
-        self.influenced_fairness_crit = ifc
+        self.influenced_fairness_crit = inc_fair
 
         self.pop_size = pop_size
-        # x and y are payoffs
-        # 0 < x < y
-        self.x = x # if player accepts offer
-        self.y = y # if all players reject offer
         self.threashold = K 
-        self.reservation_threashold = x # r: minimum amount of compensation / maximum cost 
+        self.reservation_threashold = res_threash # r: minimum amount of compensation / maximum cost 
 
         self.alpha = 1
         self.beta = 1
@@ -68,21 +64,12 @@ class Agent():
         return choice
 
     def payoff(self, r_offer, a_offer):
-        # payoff is y if every player rejects offer
-        # otherwise it is x (if player accepts) or 0 (if player rejects)
         if self.last_choice == "reject":
-            payoff = r_offer
+            payoff = r_offer # = a_offer + y if threashold met, else = 0
         else:
-            payoff = a_offer
+            payoff = a_offer # = a_offer + y if threashold met, else = a_offer
         self.total_util += payoff
 
-    #def update_belief(self, acceptances):
-        #n = self.pop_size
-        #k = acceptances
-        #self.alpha += acceptances
-        #self.beta += (self.pop_size - acceptances)
-        #self.prob_accept = self.alpha / (self.alpha + self.beta)
-        #self.prob_reject = 1 - self.prob_accept
 
     def get_exp_util(self, p_rej, x, y):
         accept = x
