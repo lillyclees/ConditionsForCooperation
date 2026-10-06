@@ -1,0 +1,17 @@
+Number of episodes: 2
+Rounds per episode: 100
+Number of players: 10
+Time: 0.5540406703948975 secs
+2 episodes ended with the majority rejecting 
+0 episodes ended with the majority accepting
+10
+10
+0.3
+0.95
+100.0
+0.25
+75.0
+114.99999999999999
+0.0
+50.0
+Fully connected network

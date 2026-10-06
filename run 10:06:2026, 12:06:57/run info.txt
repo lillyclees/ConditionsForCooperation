@@ -1,5 +1,0 @@
-Number of episodes: 100
-Rounds per episode: 100
-Number of players: 3
-46 episodes converged to reject
-54 episodes converged to accept

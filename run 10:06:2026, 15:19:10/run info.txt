@@ -1,0 +1,16 @@
+Number of episodes: 1
+Rounds per episode: 5
+Number of players: 10
+0 episodes ended with the majority rejecting 
+1 episodes ended with the majority accepting
+10
+10
+0.15
+0.95
+50.0
+0.5
+25.0
+57.49999999999999
+0.0
+50.0
+Fully connected network
