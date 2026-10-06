@@ -10,7 +10,7 @@ class Agent():
     def __init__(self, K, pop_size, x, y, res_threash, dec_rule="S", risk_av=0, inc_fair=True):
         self.dec_rule = dec_rule # s: S = accept with probability other players accept, B = best response
         self.risk_av = risk_av # p: risk aversion coefficient
-        self.decision_noise = 0 # b: decision noise
+        self.B = 0 # b: decision noise
         self.influenced_fairness_crit = inc_fair
 
         self.pop_size = pop_size
@@ -46,18 +46,24 @@ class Agent():
     def move(self, x, y): 
         self.time += 1
 
+        eu_acc, eu_rej = self.get_exp_util(self.prob_others_reject, x, y)
+        
+        p_reject = math.exp((self.B * eu_rej)) / (math.exp((self.B * eu_acc)) + math.exp((self.B * eu_rej)))
+
+        choice = np.random.choice(["accept","reject"], size=1, p=[(1-p_reject), p_reject])
+
         # strategy at time t
         # playing mixed strategy for at least the first 5 moves
-        if self.dec_rule == "S" or self.time < 5:
-            choice = np.random.choice(["accept","reject"], size=1, p=[self.prob_accept, self.prob_reject])
+        #if self.dec_rule == "S" or self.time < 5:
+        #    choice = np.random.choice(["accept","reject"], size=1, p=[self.prob_others_accept, self.prob_others_reject])
 
         # playing best response
-        elif self.dec_rule == "B":
-            ac, rej = self.get_exp_util(self.prob_reject, x, y)
-            if ac > rej:
-                choice = "accept"
-            else:
-                choice = "reject"
+        #elif self.dec_rule == "B":
+        #    ac, rej = self.get_exp_util(self.prob_reject, x, y)
+        #    if ac > rej:
+        #        choice = "accept"
+        #    else:
+        #        choice = "reject"
 
         self.last_choice = choice
 
@@ -79,23 +85,9 @@ class Agent():
         return accept, reject
 
     def random_starting_probs(self):
-        self.prob_accept = random.uniform(0, 1.0)
-        self.prob_reject = 1 - self.prob_accept
+        self.prob_others_accept = random.uniform(0, 1.0)
+        self.prob_others_reject = 1 - self.prob_others_accept
 
-        self.prob_others_reject = self.prob_reject
-        self.prob_others_accept = self.prob_accept
-
-    def pdf_starting_probs(self, mean=0.5, std_dev=0.1):
-
-        # Agents starting probability of accept is a random sample from a normal distribution
-        # centered at 0.5 with standard deviation 0.1
-        p_accept = norm.rvs(loc=mean, scale=std_dev, size=1)
-
-        self.prob_accept = p_accept[0]
-        self.prob_reject = 1 - p_accept[0]
-
-        self.prob_others_reject = self.prob_reject
-        self.prob_others_accept = self.prob_accept
     
     def calculate_res_threash(self, fairness_benchmark, std_dev=0.1):
         # res threash drawn from normal dist centered on pf
