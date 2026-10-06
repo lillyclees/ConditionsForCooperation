@@ -12,33 +12,29 @@ os.mkdir(new_dir)
 
 
 # game parameters
-n_episodes = 100
-episode_length = 100
-pop_size = 3
-n_type = "F" # network type: (S)tar, (F)ully connected
+N_sims = 100 # number of simulation runs / episodes
+T = 1000 # time steps / episode length
 
-x = 5 # p0: inital offer 
-y = 5 # ammount offer is increased by
-threashold = pop_size #K
+N = 3 # number of agents / population size
+K = N # threashold for collective action
 
-inc_fair = True # included in fairness: yet to implement this, for now it is universal 
-fair_b = y # pf: fairness benchmark - ditto
-unfairness_param = 1 - (x/fair_b) #f: unfairness parameter [0,1] - ditto 
+net_type = "F" # network type: (S)tar, (F)ully connected
 
-dec_rule = "B" # S = accept with probability other players accept, B = best response
+alpha = 0.15 # belief learning rate
+delta = 0.95 # discount factor
+p_f, f = 100.0, 0.20 # pf: fairness benchmark, f: unfairness parameter [0,1] = 1 - (x/p_f)
+p_0, p_1 = (1.0 - f) * p_f, 1.15 * p_f # inital offer, increased offer 
+V_0, V_1 = 0.0, 50.0 # continuation value, shouldnt these be proportional to p_0 / p_1?
+
+
 risk_av = False
 
+agent_aggs = [N, alpha, delta, p_f, f, p_0, p_1, V_0, V_1]
 
-run_episodes(n_episodes, 
-             episode_length, 
-             threashold, 
-             pop_size, 
-             x, y, 
-             dec_rule, 
-             risk_av, 
-             inc_fair, 
-             n_type, 
-             dir_name,
-             fair_b,
-             unfairness_param,
-             res_threash=0)
+run_sims(N_sims, 
+             T, 
+             net_type,
+             N,
+             K, 
+             agent_aggs,
+             dir_name)
