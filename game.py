@@ -41,10 +41,17 @@ def save_game_info(N_sims, T, N, dir, agent_aggs, majority_reject, n_type, time)
                 f"Number of players: {N}",
                 f"Time: {time} secs",
                 f"{majority_reject} episodes ended with the majority rejecting ",
-                f"{N_sims - majority_reject} episodes ended with the majority accepting"]
+                f"{N_sims - majority_reject} episodes ended with the majority accepting",
+                f"Threashold: {agent_aggs[0]}",
+                f"Alpha: {agent_aggs[2]} (belief learning rate)",
+                f"Delta: {agent_aggs[3]} (discount factor)",
+                f"p_f: {agent_aggs[4]} (fairness benchmark)",
+                f"f: {agent_aggs[5]} (unfairness parameter)",
+                f"(1 - f)*p_f == p_0: {agent_aggs[6]} (inital offer)",
+                f" {agent_aggs[7]/agent_aggs[6]}*p_0 == p_1: {agent_aggs[7]} (increased offer)",
+                f"V_0, V_1: {agent_aggs[8], agent_aggs[9]} (continuation value)"]
         
         file.writelines(line + "\n" for line in info)
-        file.writelines(str(line) + "\n" for line in agent_aggs)
 
         if n_type == "S":
             file.write('Star network\n')
@@ -100,15 +107,13 @@ def run_simulation(T, G, K, N, alpha, delta, p_f, f, p_0, p_1, V_0, V_1):
             if agent.move(current_p, p_1, delta, V_1, V_0) == 1:
                 acceptances += 1
 
-        # checking if threashold was met, if so updating reward 
+        # checking if threashold was met, if so, updating reward 
         if acceptances >= K:
+            #print(f"step {step} sucsesfully coordinated")
             current_p = p_1
-            threash_met = True
-
+        
         # updating each agent's belief 
         for agent in agents:
-            #agent.payoff(current_p, threash_met)
-
             # getting information about agent's neighbor's actions
             neighbors = []
             for peer in list(G.neighbors(agent)):
@@ -129,14 +134,15 @@ def build_agents(K, N, alpha, delta, p_f, f, p_0, p_1, V_0, V_1):
 
     rho = np.random.uniform(0.01, 0.10, size=N) # p: risk aversion coefficient
     beta = np.random.uniform(1.0, 5.0, size=N) # b: choice sensitivity
-    C = np.random.uniform(0.5*p_0, 5.0, size=N) # C: oppertunity cost
+    C = np.random.uniform(p_0, p_0, size=N)
+    #C = np.random.uniform(0.5*p_0, 5.0, size=N) # C: oppertunity cost
 
     r = np.random.normal(loc=p_f, scale=5.0, size=N) # r: reservation threashold, minimum amount of compensation / maximum cost 
     fairness_part = 1 # [0,1] percentage of agents who participated in generating the fairness criteria
 
     for i in range(N):
         included = True if random.uniform(0, 1) < fairness_part else False
-        player = Agent(K, N, rho[i], beta[i], C[i], r[i], included)
+        player = Agent(K, N, rho[i], beta[i], C[i], r[i], alpha, included)
         agents.append(player)
 
     return agents
