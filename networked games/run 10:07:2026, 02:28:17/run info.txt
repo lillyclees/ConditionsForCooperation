@@ -1,0 +1,15 @@
+Number of episodes: 5
+Rounds per episode: 500
+Number of players: 3
+Time: 1.3098480701446533 secs
+4 episodes ended with the majority rejecting 
+1 episodes ended with the majority accepting
+Threashold: 3
+Alpha: 0.3 (belief learning rate)
+Delta: 0.95 (discount factor)
+p_f: 100.0 (fairness benchmark)
+f: 0.5 (unfairness parameter)
+(1 - f)*p_f == p_0: 50.0 (inital offer)
+ 2.3*p_0 == p_1: 114.99999999999999 (increased offer)
+V_0, V_1: (0.0, 114.99999999999999) (continuation value)
+Fully connected network
