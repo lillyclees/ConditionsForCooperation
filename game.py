@@ -94,21 +94,21 @@ def run_sims(N_sims, T, n_type, N, agent_aggs, dir):
 
 
 def run_simulation(T, G, K, N, alpha, delta, p_f, f, p_0, p_1, V_0, V_1):
-    history = [[],[],[]]
+    history = [[],[],[]] # [p(rejecting), rejections, acceptences]
     current_p = p_0
 
     agents = list(G.nodes)
     for step in range(T):
         threash_met = False
-        acceptances = 0
+        rejections = 0
 
         # each agent moves
         for agent in agents:
-            if agent.move(current_p, p_1, delta, V_1, V_0) == 1:
-                acceptances += 1
+            if agent.move(current_p, p_1, delta, V_1, V_0) == 0:
+                rejections += 1
 
         # checking if threashold was met, if so, updating reward 
-        if acceptances >= K:
+        if rejections >= K:
             #print(f"step {step} sucsesfully coordinated")
             current_p = p_1
         
@@ -122,9 +122,9 @@ def run_simulation(T, G, K, N, alpha, delta, p_f, f, p_0, p_1, V_0, V_1):
             # updating agent's belief 
             agent.update_belief(neighbors)
 
-        history[0].append(acceptances/N)
-        history[1].append(acceptances)
-        history[2].append(N - acceptances)
+        history[0].append(rejections/N)
+        history[1].append(rejections)
+        history[2].append(N - rejections)
 
     return history
 

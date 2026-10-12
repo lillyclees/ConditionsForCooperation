@@ -26,7 +26,7 @@ class Agent():
         self.total_util = 0
         self.time = 1 # number of moves made
 
-        self.neighbor_beliefs  = [] # [# of acceptances, # of rejections, p of accepting]
+        self.neighbor_beliefs  = [] # [# of rejections, # of acceptences, p(rejecting) ]
 
     def create_neighors(self,neighbors):
         for i in range(len(neighbors)):
@@ -35,8 +35,8 @@ class Agent():
     def update_belief(self, neighbors):
         # belief of agent i that agent j will reject offer
         for j in range(len(neighbors)):
-            self.neighbor_beliefs[j][0] += neighbors[j][0]
-            self.neighbor_beliefs[j][1] += neighbors[j][1]
+            self.neighbor_beliefs[j][0] += neighbors[j][0] # rejections
+            self.neighbor_beliefs[j][1] += neighbors[j][1] # acceptences 
             self.neighbor_beliefs[j][2] = (self.neighbor_beliefs[j][0] / self.time) 
             
 
