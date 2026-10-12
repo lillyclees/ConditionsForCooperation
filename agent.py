@@ -18,9 +18,8 @@ class Agent():
         self.N = N # population size
         self.r = r # r: reservation threashold, minimum amount of compensation / maximum cost 
 
+        self.bl_prior = 0.5
         self.p_reject = 0.5
-
-        self.prob_others_reject = 0.5
 
         self.last_choice = 0
         self.total_util = 0
@@ -43,7 +42,8 @@ class Agent():
     def pbd(self, K):
         neighbors = [i[2] for i in self.neighbor_beliefs]
         if K > len(neighbors):
-            extra = random.choices(neighbors, k=(self.K - len(neighbors)))
+            #extra = random.choices(neighbors, k=(self.K - len(neighbors)))
+            extra = [self.bl_prior for n in range(self.K - len(neighbors))]
             neighbors = neighbors.extend(extra)
         
         
