@@ -42,6 +42,7 @@ def save_game_info(N_sims, T, N, dir, agent_aggs, majority_reject, n_type, time)
                 f"Time: {time} secs",
                 f"{majority_reject} episodes ended with the majority rejecting ",
                 f"{N_sims - majority_reject} episodes ended with the majority accepting",
+                f"========================================="
                 f"Threashold: {agent_aggs[0]}",
                 f"Alpha: {agent_aggs[2]} (belief learning rate)",
                 f"Delta: {agent_aggs[3]} (discount factor)",

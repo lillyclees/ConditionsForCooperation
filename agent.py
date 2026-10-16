@@ -36,7 +36,10 @@ class Agent():
         for j in range(len(neighbors)):
             self.neighbor_beliefs[j][0] += neighbors[j][0] # rejections
             self.neighbor_beliefs[j][1] += neighbors[j][1] # acceptences 
-            self.neighbor_beliefs[j][2] = (self.neighbor_beliefs[j][0] / self.time) 
+            #self.neighbor_beliefs[j][2] = (self.neighbor_beliefs[j][0] / self.time) 
+            prior = self.neighbor_beliefs[j][2]
+            new = (1 - self.alpha) * prior + self.alpha * neighbors[j][0]
+            self.neighbor_beliefs[j][2] = new
             
 
     def pbd(self, K):
@@ -49,30 +52,6 @@ class Agent():
         
         pbd = poisson_binom.pmf(K, neighbors)
         return pbd
-
-    def o_move(self, current_p, p_1, delta, V_1, V_0):
-        self.time += 1
-        if self.time < 2:
-            p_acc = 0.5
-            p_rej = 0.5
-        else:
-            if self.K == self.N:
-                p_acc = 0
-            else:
-                p_acc = self.belief_that_k(self.K)
-            p_rej = self.belief_that_k(self.K-1)
-
-        eu_acc = (1 - p_acc) * current_p + p_acc * p_1
-        eu_rej = p_rej * p_1
-
-        if random.uniform(0,1) < (eu_acc / (eu_acc + eu_rej)):
-            choice = 1
-        else:
-            choice = 0
-
-        self.last_choice = choice
-
-        return choice
     
     def move(self, current_p, p_1, delta, V_1, V_0): 
     
@@ -121,6 +100,6 @@ class Agent():
 
     
     def util(self, x, rho):
-        return 1 - np.exp(-rho * x)
+        return -np.exp(-rho * x)
 
 
