@@ -16,27 +16,27 @@ class Agent():
 
         self.K = K # threashold 
         self.N = N # population size
-        self.r = r # r: reservation threashold, minimum amount of compensation / maximum cost 
+        self.r = r # reservation threashold, minimum amount of compensation / maximum cost 
 
         self.bl_prior = 0.5
-        self.p_reject = 0.5
 
         self.last_choice = 0
         self.total_util = 0
         self.time = 1 # number of moves made
 
-        self.neighbor_beliefs  = [] # [# of rejections, # of acceptences, p(rejecting) ]
+        self.neighbor_beliefs  = [] # [# of rejections, # of acceptences, p(rejecting)]
 
-    def create_neighors(self,neighbors):
+    def create_neighors(self, neighbors):
         for i in range(len(neighbors)):
             self.neighbor_beliefs.append([1, 1, 0.5]) # rejections, acceptences, running prob
 
     def update_belief(self, neighbors):
         # belief of agent i that agent j will reject offer
         for j in range(len(neighbors)):
-            self.neighbor_beliefs[j][0] += neighbors[j][0] # rejections
-            self.neighbor_beliefs[j][1] += neighbors[j][1] # acceptences 
+            #self.neighbor_beliefs[j][0] += neighbors[j][0] # rejections
+            #self.neighbor_beliefs[j][1] += neighbors[j][1] # acceptences 
             #self.neighbor_beliefs[j][2] = (self.neighbor_beliefs[j][0] / self.time) 
+
             prior = self.neighbor_beliefs[j][2]
             new = (1 - self.alpha) * prior + self.alpha * neighbors[j][0]
             self.neighbor_beliefs[j][2] = new
@@ -45,11 +45,9 @@ class Agent():
     def pbd(self, K):
         neighbors = [i[2] for i in self.neighbor_beliefs]
         if K > len(neighbors):
-            #extra = random.choices(neighbors, k=(self.K - len(neighbors)))
-            extra = [self.bl_prior for n in range(self.K - len(neighbors))]
-            neighbors = neighbors.extend(extra)
-        
-        
+            extra = [self.bl_prior for n in range(K - len(neighbors))]
+            neighbors += extra
+    
         pbd = poisson_binom.pmf(K, neighbors)
         return pbd
     
@@ -59,8 +57,9 @@ class Agent():
 
         eu_acc, eu_rej = self.get_exp_util(current_p, p_1, delta, V_1, V_0)
         
-        p_reject = math.exp((self.beta * eu_rej)) / (math.exp((self.beta * eu_acc)) + math.exp((self.beta * eu_rej)))
-        self.p_reject = p_reject
+        #p_reject = math.exp((self.beta * eu_rej)) / (math.exp((self.beta * eu_acc)) + math.exp((self.beta * eu_rej)))
+        
+        p_reject = 1.0 / (1.0 + np.exp(-self.beta * (eu_rej - eu_acc)))
       
         if random.uniform(0,1) > p_reject:
             choice = 1 # accept
@@ -79,7 +78,9 @@ class Agent():
         else:
             p_K_others_rej = self.pbd(self.K)
         
-        k_less_one = self.pbd(self.K - 1)
+        # As it is a given the player will reject when calculating EU reject the threashold is treated as K-1
+        k_less_one = self.pbd(self.K - 1) 
+        
     
         # utility for accept
         u_acc_succ = self.util(current_p - self.r + delta * V_1, self.rho)
