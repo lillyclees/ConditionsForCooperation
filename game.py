@@ -12,7 +12,8 @@ def plot_episodes_outcomes(data, dir, episodes):
     for episode in data:
         plt.plot(episode)
     plt.xlabel('Steps')
-    plt.ylabel(f'Avg Probability of Accepting over {episodes} Episodes')
+    #plt.ylabel(f'Avg Probability of Rejecting over {episodes} Episodes')
+    plt.ylabel(f'Rejections over {episodes} Episodes')
     plt.savefig(f"{dir}/{episodes} episodes")
     plt.close()
     #plt.show()
@@ -20,12 +21,12 @@ def plot_episodes_outcomes(data, dir, episodes):
 def plot_episode_outcome(ep_data, dir, episode):
     plt.plot(ep_data[0])
     plt.xlabel('Steps')
-    plt.ylabel('Avg Probability of Accepting')
+    plt.ylabel('Avg Probability of Rejecting')
     plt.savefig(f"{dir}/episodes/probs_episode {episode}")
     plt.close()
 
-    plt.plot(ep_data[1], label="Acceptances")
-    plt.plot(ep_data[2], label="Rejections")
+    plt.plot(ep_data[1], label="Rejections")
+    plt.plot(ep_data[2], label="Acceptances")
     plt.legend(loc='best')
     plt.xlabel('Steps')
     plt.ylabel('No Players')
@@ -34,14 +35,14 @@ def plot_episode_outcome(ep_data, dir, episode):
     #plt.show()
 
 
-def save_game_info(N_sims, T, N, dir, agent_aggs, majority_reject, n_type, time):
+def save_game_info(N_sims, T, N, dir, agent_aggs, threash_met, t, n_type, time):
     with open(f'{dir}/run info.txt', 'w') as file:
         info = [f"Number of episodes: {N_sims}",
                 f"Rounds per episode: {T}",
                 f"Number of players: {N}",
                 f"Time: {time} secs",
-                f"{majority_reject} episodes ended with the majority rejecting ",
-                f"{N_sims - majority_reject} episodes ended with the majority accepting",
+                f"{threash_met} episodes where the threashold was met ",
+                f"mean of {t} steps to meet threashold ",
                 f"========================================="
                 f"Threashold: {agent_aggs[0]}",
                 f"Alpha: {agent_aggs[2]} (belief learning rate)",
@@ -64,7 +65,11 @@ def run_sims(N_sims, T, n_type, N, agent_aggs, dir):
         start = time.time()
 
         data = []
-        majority_reject = 0
+
+        threash_met = 0
+        time_to_meet = 0
+        avg_ttm = 0
+
         # running each episode and plotting episode outcome
         for episode in range(N_sims):
             agents = build_agents(*agent_aggs)
@@ -80,22 +85,25 @@ def run_sims(N_sims, T, n_type, N, agent_aggs, dir):
 
             episode_data = run_simulation(T, agents, *agent_aggs)
 
-            if episode_data[2][-1] / N > 0.5:
-                majority_reject += 1
-                if majority_reject < 5:
+            if episode_data[3] == True:
+                threash_met += 1
+                time_to_meet += episode_data[4]
+                avg_ttm = threash_met / time_to_meet
+                if threash_met < 5:
                     plot_episode_outcome(episode_data, dir, episode)
 
-            data.append(episode_data[0])
+            #data.append(episode_data[0])
+            data.append(episode_data[1])
 
         # plot average probability of acceptance over time for each episode
         plot_episodes_outcomes(data, dir, N_sims)
 
         end = time.time()
-        save_game_info(N_sims, T, N, dir, agent_aggs, majority_reject, n_type, end-start)
+        save_game_info(N_sims, T, N, dir, agent_aggs, threash_met, avg_ttm, n_type, end-start)
 
 
 def run_simulation(T, G, K, N, alpha, delta, p_f, f, p_0, p_1, V_0, V_1):
-    history = [[],[],[]] # [p(rejecting), rejections, acceptences]
+    history = [[],[],[], False, 0] # [p(rejecting), rejections, acceptences, threashold met]
     current_p = p_0
 
     agents = list(G.nodes)
@@ -110,7 +118,10 @@ def run_simulation(T, G, K, N, alpha, delta, p_f, f, p_0, p_1, V_0, V_1):
 
         # checking if threashold was met, if so, updating reward 
         if rejections >= K:
+            print(rejections, step)
             #print(f"step {step} sucsesfully coordinated")
+            history[3] = True
+            history[4] = step
             current_p = p_1
         
         # updating each agent's belief 
@@ -118,6 +129,7 @@ def run_simulation(T, G, K, N, alpha, delta, p_f, f, p_0, p_1, V_0, V_1):
             # getting information about agent's neighbor's actions
             neighbors = []
             for peer in list(G.neighbors(agent)):
+                # peer rejected/accepted = [1, 0]/[0, 1]
                 neighbors.append([1 - peer.last_choice, peer.last_choice])
 
             # updating agent's belief 
@@ -135,8 +147,8 @@ def build_agents(K, N, alpha, delta, p_f, f, p_0, p_1, V_0, V_1):
 
     rho = np.random.uniform(0.01, 0.10, size=N) # p: risk aversion coefficient
     beta = np.random.uniform(1.0, 5.0, size=N) # b: choice sensitivity
-    C = np.random.uniform(p_0, p_0, size=N)
-    #C = np.random.uniform(0.5*p_0, 5.0, size=N) # C: oppertunity cost
+    #C = np.random.uniform(p_0, p_0, size=N)
+    C = np.random.uniform(0.5*p_0, 5.0, size=N) # C: oppertunity cost
 
     r = np.random.normal(loc=p_f, scale=5.0, size=N) # r: reservation threashold, minimum amount of compensation / maximum cost 
     fairness_part = 1 # [0,1] percentage of agents who participated in generating the fairness criteria
