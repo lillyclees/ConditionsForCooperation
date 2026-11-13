@@ -13,7 +13,7 @@ def make_dir(name):
     return dir_name
 
 # game parameters
-N_sims = 10 # number of simulation runs / episodes
+N_sims = 100 # number of simulation runs / episodes
 T = 1000 # time steps / episode length
 
 #N = 10 # number of agents / population size
@@ -38,7 +38,7 @@ risk_av = False
 
 
 
-pop_sizes = [10, 50]
+pop_sizes = [10, 50, 100]
 
 for pop in pop_sizes:
     dir_name = make_dir(str(pop) + " players")

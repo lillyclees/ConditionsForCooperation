@@ -33,10 +33,6 @@ class Agent():
     def update_belief(self, neighbors):
         # belief of agent i that agent j will reject offer
         for j in range(len(neighbors)):
-            #self.neighbor_beliefs[j][0] += neighbors[j][0] # rejections
-            #self.neighbor_beliefs[j][1] += neighbors[j][1] # acceptences 
-            #self.neighbor_beliefs[j][2] = (self.neighbor_beliefs[j][0] / self.time) 
-
             prior = self.neighbor_beliefs[j][2]
             new = (1 - self.alpha) * prior + self.alpha * neighbors[j][0]
             self.neighbor_beliefs[j][2] = new
@@ -93,9 +89,6 @@ class Agent():
         u_rej_fail = self.util(-self.C + delta * V_0, self.rho)
         EU_reject = k_less_one * u_rej_succ + (1 - k_less_one) * u_rej_fail
         
-        #print(u_acc_succ, u_acc_fail)
-        #print(u_rej_succ, u_rej_fail)
-        #print("===")
 
         return EU_accept, EU_reject
 
