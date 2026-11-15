@@ -19,7 +19,7 @@ T = 1000 # time steps / episode length
 #N = 10 # number of agents / population size
 #K = N # threashold for collective action
 
-net_type = "S" # network type: (S)tar, (F)ully connected
+net_type = "F" # network type: (S)tar, (F)ully connected
 
 alpha = 0.15 # belief learning rate
 delta = 0.95 # discount factor

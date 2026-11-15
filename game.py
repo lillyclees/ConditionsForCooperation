@@ -88,7 +88,7 @@ def run_sims(N_sims, T, n_type, N, agent_aggs, dir):
             if episode_data[3] == True:
                 threash_met += 1
                 time_to_meet += episode_data[4]
-                avg_ttm = threash_met / time_to_meet
+                avg_ttm = threash_met / (time_to_meet + 1)
                 if threash_met < 5:
                     plot_episode_outcome(episode_data, dir, episode)
 
@@ -118,8 +118,6 @@ def run_simulation(T, G, K, N, alpha, delta, p_f, f, p_0, p_1, V_0, V_1):
 
         # checking if threashold was met, if so, updating reward 
         if rejections >= K:
-            print(rejections, step)
-            #print(f"step {step} sucsesfully coordinated")
             history[3] = True
             history[4] = step
             current_p = p_1
